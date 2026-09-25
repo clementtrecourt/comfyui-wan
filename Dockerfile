@@ -12,15 +12,19 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     && rm -rf /var/lib/apt/lists/*
 
-# 2. Cloner ComfyUI dans le conteneur (sur le SSD local !)
+# 2. Cloner ComfyUI dans le conteneur
 WORKDIR /app
 RUN git clone --depth 1 https://github.com/comfyanonymous/ComfyUI.git /app/ComfyUI
 
-# 3. Installer les dépendances du core ComfyUI
+# 3. Installer PyTorch avec CUDA 12.8 (Indispensable pour l'architecture Blackwell sm_120)
+RUN pip install --no-cache-dir --upgrade torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128 || \
+    pip install --no-cache-dir --upgrade torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu126
+
+# 4. Installer les dépendances du core ComfyUI
 WORKDIR /app/ComfyUI
 RUN pip install --no-cache-dir -r requirements.txt
 
-# 4. Cloner les 12 custom nodes indispensables
+# 5. Cloner les 12 custom nodes indispensables
 WORKDIR /app/ComfyUI/custom_nodes
 RUN git clone --depth 1 https://github.com/kijai/ComfyUI-WanVideoWrapper.git && \
     git clone --depth 1 https://github.com/kijai/ComfyUI-KJNodes.git && \
@@ -35,11 +39,12 @@ RUN git clone --depth 1 https://github.com/kijai/ComfyUI-WanVideoWrapper.git && 
     git clone --depth 1 https://github.com/aining2022/ComfyUI_Swwan.git && \
     git clone --depth 1 --recursive https://github.com/Fannovel16/ComfyUI-Frame-Interpolation.git
 
-# 5. Patch pour ComfyUI-Custom-Scripts (pysssss)
+# 6. Patchs de compatibilité (pysssss + sécurisation attention.py)
 RUN cd ComfyUI-Custom-Scripts && \
     sed -i 's/shutil\.copy(/shutil.copyfile(/g' pysssss.py || true
+RUN sed -i 's/comfy_kitchen\.int8_attention_is_available()/getattr(comfy_kitchen, "int8_attention_is_available", lambda: False)()/g' /app/ComfyUI/comfy/ldm/modules/attention.py || true
 
-# 6. Installer TOUTES les bibliothèques Python
+# 7. Installer TOUTES les bibliothèques Python
 RUN pip install --no-cache-dir \
     onnx \
     onnxruntime-gpu \
@@ -60,9 +65,6 @@ RUN pip install --no-cache-dir \
     matplotlib \
     gguf \
     colour-science
-
-# 7. Correction chirurgicale du bug comfy-kitchen (stride: typing.List[int])
-RUN python3 -c "import glob; [open(f, 'w').write('import typing\n' + open(f).read().replace('stride: list[int]', 'stride: typing.List[int]')) for f in glob.glob('/usr/local/lib/python3.11/dist-packages/comfy_kitchen/**/*.py', recursive=True)]" || true
 
 # 8. Script d'entrée
 COPY entrypoint.sh /entrypoint.sh
