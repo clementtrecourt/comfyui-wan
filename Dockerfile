@@ -20,7 +20,7 @@ RUN git clone --depth 1 https://github.com/comfyanonymous/ComfyUI.git /app/Comfy
 WORKDIR /app/ComfyUI
 RUN pip install --no-cache-dir -r requirements.txt
 
-# 4. Cloner les 13 custom nodes indispensables
+# 4. Cloner les 12 custom nodes indispensables (sans CRT-Nodes)
 WORKDIR /app/ComfyUI/custom_nodes
 RUN git clone --depth 1 https://github.com/kijai/ComfyUI-WanVideoWrapper.git && \
     git clone --depth 1 https://github.com/kijai/ComfyUI-KJNodes.git && \
@@ -32,7 +32,6 @@ RUN git clone --depth 1 https://github.com/kijai/ComfyUI-WanVideoWrapper.git && 
     git clone --depth 1 https://github.com/yolain/ComfyUI-Easy-Use.git && \
     git clone --depth 1 https://github.com/evanspearman/ComfyMath.git && \
     git clone --depth 1 https://github.com/digitaljohn/comfyui-propost.git && \
-    git clone --depth 1 https://github.com/robgon-ai/CRT-Nodes.git && \
     git clone --depth 1 https://github.com/aining2022/ComfyUI_Swwan.git && \
     git clone --depth 1 --recursive https://github.com/Fannovel16/ComfyUI-Frame-Interpolation.git
 
