@@ -12,18 +12,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     && rm -rf /var/lib/apt/lists/*
 
-# 2. Mettre à niveau PyTorch vers 2.5+ (indispensable pour Blackwell et comfy-kitchen)
-RUN pip install --no-cache-dir --upgrade torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu124
-
-# 3. Cloner ComfyUI dans le conteneur (sur le SSD local !)
+# 2. Cloner ComfyUI dans le conteneur (sur le SSD local !)
 WORKDIR /app
 RUN git clone --depth 1 https://github.com/comfyanonymous/ComfyUI.git /app/ComfyUI
 
-# 4. Installer les dépendances du core ComfyUI
+# 3. Installer les dépendances du core ComfyUI
 WORKDIR /app/ComfyUI
 RUN pip install --no-cache-dir -r requirements.txt
 
-# 5. Cloner les 12 custom nodes indispensables
+# 4. Cloner les 12 custom nodes indispensables
 WORKDIR /app/ComfyUI/custom_nodes
 RUN git clone --depth 1 https://github.com/kijai/ComfyUI-WanVideoWrapper.git && \
     git clone --depth 1 https://github.com/kijai/ComfyUI-KJNodes.git && \
@@ -38,11 +35,11 @@ RUN git clone --depth 1 https://github.com/kijai/ComfyUI-WanVideoWrapper.git && 
     git clone --depth 1 https://github.com/aining2022/ComfyUI_Swwan.git && \
     git clone --depth 1 --recursive https://github.com/Fannovel16/ComfyUI-Frame-Interpolation.git
 
-# 6. Patch pour ComfyUI-Custom-Scripts (pysssss)
+# 5. Patch pour ComfyUI-Custom-Scripts (pysssss)
 RUN cd ComfyUI-Custom-Scripts && \
     sed -i 's/shutil\.copy(/shutil.copyfile(/g' pysssss.py || true
 
-# 7. Installer TOUTES les bibliothèques Python
+# 6. Installer TOUTES les bibliothèques Python
 RUN pip install --no-cache-dir \
     onnx \
     onnxruntime-gpu \
@@ -63,6 +60,9 @@ RUN pip install --no-cache-dir \
     matplotlib \
     gguf \
     colour-science
+
+# 7. Correction chirurgicale du bug comfy-kitchen (stride: typing.List[int])
+RUN python3 -c "import glob; [open(f, 'w').write('import typing\n' + open(f).read().replace('stride: list[int]', 'stride: typing.List[int]')) for f in glob.glob('/usr/local/lib/python3.11/dist-packages/comfy_kitchen/**/*.py', recursive=True)]" || true
 
 # 8. Script d'entrée
 COPY entrypoint.sh /entrypoint.sh
