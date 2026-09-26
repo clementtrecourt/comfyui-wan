@@ -39,6 +39,13 @@ RUN git clone --depth 1 https://github.com/kijai/ComfyUI-WanVideoWrapper.git && 
     git clone --depth 1 https://github.com/aining2022/ComfyUI_Swwan.git && \
     git clone --depth 1 --recursive https://github.com/Fannovel16/ComfyUI-Frame-Interpolation.git
 
+# 5b. Installer les requirements.txt propres à CHAQUE custom node
+RUN for dir in */ ; do \
+      if [ -f "$dir/requirements.txt" ]; then \
+        echo ">>> Installing deps for $dir" && \
+        pip install --no-cache-dir -r "$dir/requirements.txt" || true; \
+      fi; \
+    done
 # 6. Patchs de compatibilité (pysssss + sécurisation attention.py)
 RUN cd ComfyUI-Custom-Scripts && \
     sed -i 's/shutil\.copy(/shutil.copyfile(/g' pysssss.py || true
